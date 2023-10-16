@@ -10,34 +10,39 @@ namespace Todo.Controllers
     public class HomeController : ControllerBase
     {
         [HttpGet("/")]
-        public List<TodoModel> Get([FromServices] TodoContext context)
-        {
-            return context.Todos.ToList();
-        }
+        public IActionResult Get([FromServices] TodoContext context)
+            => Ok(context.Todos.ToList());
+
 
         [HttpGet("/{id:int}")]
-        public TodoModel GetById(
+        public IActionResult GetById(
         [FromRoute] int id,
         [FromServices] TodoContext context)
         {
-            return context.Todos
-                    .AsNoTracking()
-                    .FirstOrDefault(x => x.Id == id);
+            var todo = context.Todos
+                        .AsNoTracking()
+                        .FirstOrDefault(x => x.Id == id);
+
+            if(todo == null)
+                return NotFound();
+
+            return Ok(todo);
         }
 
         [HttpPost("/")]
-        public TodoModel Post(
+        public IActionResult Post(
             [FromBody] TodoModel todo,
             [FromServices] TodoContext context)
         {
             context.Todos.Add(todo);
             context.SaveChanges();
-            return todo;
+
+            return Created($"{todo.Id}", todo);
         }
 
 
         [HttpPut("/{id:int}")]
-        public TodoModel Put(
+        public IActionResult Put(
             [FromRoute] int id,
             [FromBody] TodoModel todo,
             [FromServices] TodoContext context)
@@ -47,7 +52,7 @@ namespace Todo.Controllers
                 .FirstOrDefault(x => x.Id == id);
 
             if (model == null)
-                return todo;
+                return NotFound();
 
             model.Title = todo.Title;
             model.Done = todo.Done;
@@ -55,11 +60,11 @@ namespace Todo.Controllers
             context.Todos.Update(model);
             context.SaveChanges();
 
-            return model;
+            return Ok(model);
         }
 
         [HttpDelete("/{id:int}")]
-        public string Delete(
+        public IActionResult Delete(
             [FromRoute] int id,
             [FromServices] TodoContext context
         )
@@ -68,10 +73,13 @@ namespace Todo.Controllers
                             .AsNoTracking()
                             .FirstOrDefault(x => x.Id == id);
 
+            if (model == null)
+                return NotFound();
+
             context.Todos.Remove(model);
             context.SaveChanges();
 
-            return "Task delete sucessfull";
+            return Ok ("Task delete sucessfull");
         }
 
     }
